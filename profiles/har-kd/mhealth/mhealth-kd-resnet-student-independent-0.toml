@@ -1,0 +1,112 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "Knowledge distillation on mHealth by ResNet"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Global settings -----
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "INFO"
+
+# ----- Task metainfo -----
+
+[[__meta__]]
+reference = "waterch.tasker.tasks.utils.SetEnvironmentTask"
+include = false
+path = ""
+profile = "env"
+execute = true
+
+[[__meta__]]
+reference = "datasets.mhealth.MHealthDataLoaderTask:train"
+include = false
+path = ""
+profile = "train_loader"
+execute = true
+
+[[__meta__]]
+reference = "datasets.mhealth.MHealthDataLoaderTask:validate"
+include = false
+path = ""
+profile = "validate_loader"
+execute = true
+
+[[__meta__]]
+reference = "models.har_kd.kd.ResNetTeacherTrainTask"
+include = false
+path = ""
+profile = "model"
+execute = true
+
+# ----- task profiles -----
+
+[env]
+env = [
+    ["CUDA_VISIBLE_DEVICES", "0,1"]
+]
+
+[train_loader]
+sampler_type = "none"
+    [train_loader.dataset]
+    reference = "datasets.mhealth.MHealth"
+        [train_loader.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/mhealth"
+        num_workers = 0
+        window_size = 150
+        window_stride = 50
+        filter_type = 'if_not'
+        filter_by = ['subject10']
+        preprocess = ['robust']
+    [train_loader.loader]
+    batch_size = 256
+    shuffle = true
+    num_workers = 4
+    pin_memory = true
+    drop_last = false
+
+[validate_loader]
+sampler_type = "none"
+    [validate_loader.dataset]
+    reference = "datasets.mhealth.MHealth"
+        [validate_loader.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/mhealth"
+        num_workers = 4
+        window_size = 150
+        window_stride = 50
+        filter_type = 'if'
+        filter_by = ['subject10']
+        preprocess = ['robust']
+    [validate_loader.loader]
+    batch_size = 256
+    shuffle = true
+    num_workers = 4
+    pin_memory = true
+    drop_last = false
+
+[model]
+device = "cuda:0"
+non_blocking = false
+max_epochs = 400
+    [model.model]
+    in_channels = 23
+    block = "bottleneck" # "bottleneck" or "basic_block"
+    layers = [1, 1, 1, 1]
+    channels = [32, 48, 64, 80]
+    num_classes = 12 # 12 class from mhealth dataset
+    zero_init_residual = false
+    groups = 2
+    width_per_group = 32
+    [model.optimizer]
+    reference = "torch.optim.AdamW"
+        [model.optimizer.kwargs]
+        lr = 1e-4
+        amsgrad = true
+        [model.loss]
+        reference = "torch.nn.CrossEntropyLoss"
+            [model.loss.kwargs]

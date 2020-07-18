@@ -1,0 +1,39 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "mHEALTH dataset development example"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "DEBUG"
+
+[[__meta__]]
+reference = "datasets.mhealth.MHealthDataLoaderTask:development"
+include = false
+path = ""
+profile = "mhealth"
+execute = true
+
+[mhealth]
+sampler_type = "none"
+    [mhealth.dataset]
+    reference = "datasets.mhealth.MHealth"
+        [mhealth.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/mhealth"
+        num_workers = 4
+        window_size = 150
+        window_stride = 50
+        filter_type = 'if_not'
+        filter_by = ['subject10']
+        preprocess = ['robust']
+    [mhealth.loader]
+    batch_size = 128
+    shuffle = true
+    num_workers = 0
+    pin_memory = true
+    drop_last = true

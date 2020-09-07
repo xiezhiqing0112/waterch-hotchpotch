@@ -1,0 +1,196 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "Temporal Convolutional Network on Huawei-Sussex Dataset"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Global Settings -----
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "INFO"
+
+# ----- Pipeline Metainfo -----
+
+[[__meta__]]
+reference = "waterch.tasker.tasks.utils.SetEnvironmentTask"
+include = false
+path = ""
+profile = "env"
+execute = true
+
+[[__meta__]]
+reference = "datasets.shl.HuaweiSussexDataLoaderTask:train"
+include = false
+path = ""
+profile = "train_loader"
+execute = true
+
+[[__meta__]]
+reference = "datasets.shl.HuaweiSussexDataLoaderTask:validate"
+include = false
+path = ""
+profile = "validate_loader"
+execute = true
+
+[[__meta__]]
+reference = "models.tpr_tcn.tcn.TemporalConvNetworkTrainTask"
+include = false
+path = ""
+profile = "model"
+execute = true
+
+# ----- Pipeline Parameters -----
+
+# --- Environment Values ---
+
+[env]
+env = [
+    ["CUDA_VISIBLE_DEVICES", "7"]
+]
+
+# --- Huawei-Sussex Train Dataloader ---
+
+[train_loader]
+sampler_type = "batch_sampler"
+    [train_loader.dataset]
+    reference = "datasets.shl.HuaweiSussex"
+        [train_loader.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/hasca20+19test_source"
+        num_workers = 8
+        process = 'quaternion'
+        subsets = ['train/Bag', 'train/Hand', 'train/Hips', 'train/Torso']
+        label_mapping = 'raw'
+        remove_sensor = ['ORIENTATION']
+    [train_loader.loader]
+    batch_size = 512
+    shuffle = true
+    num_workers = 2
+    pin_memory = true
+    drop_last = true
+
+# --- Huawei-Sussex Validate Dataloader ---
+
+[validate_loader]
+sampler_type = "batch_sampler"
+    [validate_loader.dataset]
+    reference = "datasets.shl.HuaweiSussex"
+        [validate_loader.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/hasca20+19test_source"
+        num_workers = 4
+        process = 'quaternion'
+        subsets = ['validation/Bag', 'validation/Hand', 'validation/Hips', 'validation/Torso']
+        label_mapping = 'raw'
+        remove_sensor = ['ORIENTATION']
+    [validate_loader.loader]
+    batch_size = 512
+    shuffle = true
+    num_workers = 2
+    pin_memory = true
+    drop_last = true
+
+# --- Temporal Convolutional Network ---
+# [1] S. Bai, J. Z. Kolter, and V. Koltun, "An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling," arXiv: Learning, 2018.
+
+[model]
+device = "cuda:0"
+non_blocking = true
+max_epochs = 100
+    [model.model]
+    activation_reference = 'torch.nn.SELU'
+    num_features = 500
+    num_classes = 8
+    linear_channels = [32, 4]
+        # ACCELEROMETER
+        [[model.model.resnets]]
+        in_channels = 4
+        block = 'basic_block'
+        layers = [2, 2, 2, 2]
+        channels = [8, 12, 16, 20]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 20
+        layer_channels = [20, 24, 28]
+        kernel_size = 3
+        dropout = 0.0
+        # GRAVITY
+        [[model.model.resnets]]
+        in_channels = 4
+        block = 'basic_block'
+        layers = [2, 2, 2, 2]
+        channels = [8, 12, 16, 20]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 20
+        layer_channels = [20, 24, 28]
+        kernel_size = 3
+        dropout = 0.0
+        # GYROSCOPE
+        [[model.model.resnets]]
+        in_channels = 4
+        block = 'basic_block'
+        layers = [2, 2, 2, 2]
+        channels = [8, 12, 16, 20]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 20
+        layer_channels = [20, 24, 28]
+        kernel_size = 3
+        dropout = 0.0
+        # LINEAR_ACCELERATION
+        [[model.model.resnets]]
+        in_channels = 4
+        block = 'basic_block'
+        layers = [2, 2, 2, 2]
+        channels = [8, 12, 16, 20]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 20
+        layer_channels = [20, 24, 28]
+        kernel_size = 3
+        dropout = 0.0
+        # MAGNETIC_FIELD
+        [[model.model.resnets]]
+        in_channels = 4
+        block = 'basic_block'
+        layers = [2, 2, 2, 2]
+        channels = [8, 12, 16, 20]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 20
+        layer_channels = [20, 24, 28]
+        kernel_size = 3
+        dropout = 0.0
+        # PRESSURE
+        [[model.model.resnets]]
+        in_channels = 1
+        block = 'basic_block'
+        layers = [2, 2, 2, 2]
+        channels = [2, 4, 6, 8]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 8
+        layer_channels = [8, 10, 12]
+        kernel_size = 3
+        dropout = 0.0
+    [model.optimizer]
+    reference = "torch.optim.AdamW"
+        [model.optimizer.kwargs]
+        lr = 1e-3
+        amsgrad = true
+        [model.optimizer.scheduler]
+        reference = 'torch.optim.lr_scheduler.ReduceLROnPlateau'
+            [model.optimizer.scheduler.kwargs]
+            patience = 1
+            factor = 0.90
+            verbose = true
+            cooldown = 1
+            threshold = 1e-7
+            mode = "min"
+    [model.loss]
+    reference = "torch.nn.CrossEntropyLoss"
+        [model.loss.kwargs]

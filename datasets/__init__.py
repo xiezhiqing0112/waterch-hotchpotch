@@ -1,5 +1,7 @@
 __all__ = [
-    'mhealth'
+    'mhealth',
+    'shl',
+    'htc_tmd'
 ]
 
-import datasets.mhealth
+from datasets import *

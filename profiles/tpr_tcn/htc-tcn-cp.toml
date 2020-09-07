@@ -1,0 +1,204 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "Temporal Convolutional Network on Huawei-Sussex Dataset"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Global Settings -----
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "INFO"
+
+# ----- Pipeline Metainfo -----
+
+[[__meta__]]
+reference = "waterch.tasker.tasks.utils.SetEnvironmentTask"
+include = false
+path = ""
+profile = "env"
+execute = true
+
+[[__meta__]]
+reference = "datasets.htc_tmd.HTCTMDDataLoaderTask:train"
+include = false
+path = ""
+profile = "train_loader"
+execute = true
+
+[[__meta__]]
+reference = "datasets.htc_tmd.HTCTMDDataLoaderTask:validate"
+include = false
+path = ""
+profile = "validate_loader"
+execute = true
+
+[[__meta__]]
+reference = "models.tpr_tcn.tcn.TemporalConvNetworkTrainTask"
+include = false
+path = ""
+profile = "model"
+execute = true
+
+# ----- Pipeline Parameters -----
+
+# --- Environment Values ---
+
+[env]
+env = [
+    ["CUDA_VISIBLE_DEVICES", "7"]
+]
+
+# --- Huawei-Sussex Train Dataloader ---
+
+[train_loader]
+sampler_type = "batch_sampler"
+    [train_loader.dataset]
+    reference = "datasets.htc_tmd.HTCTMD"
+        [train_loader.dataset.kwargs]
+        cache_dir = "/public/lhy/crz/repos/waterch-hotchpotch/.cache/htc_tmd/5_sec"
+        num_workers = 8
+        slice = '+0.7'
+        preprocess = 'robust'
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['still']
+            index = 0
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['walk']
+            index = 1
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['run']
+            index = 2
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['bicycle']
+            index = 3
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~motorcycle']
+            index = 4
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~car']
+            index = 5
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~bus']
+            index = 6
+            [[train_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~MRT', 'vehicle~train', 'vehicle~HSR']
+            index = 7
+    [train_loader.loader]
+    batch_size = 128
+    shuffle = true
+    num_workers = 0
+    pin_memory = false
+    drop_last = false
+
+# --- HTC TMD Validate Dataloader ---
+
+[validate_loader]
+sampler_type = "batch_sampler"
+    [validate_loader.dataset]
+    reference = "datasets.htc_tmd.HTCTMD"
+        [validate_loader.dataset.kwargs]
+        cache_dir = "/public/lhy/crz/repos/waterch-hotchpotch/.cache/htc_tmd/5_sec"
+        num_workers = 8
+        slice = '-0.3'
+        preprocess = 'robust'
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['still']
+            index = 0
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['walk']
+            index = 1
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['run']
+            index = 2
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['bicycle']
+            index = 3
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~motorcycle']
+            index = 4
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~car']
+            index = 5
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~bus']
+            index = 6
+            [[validate_loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~MRT', 'vehicle~train', 'vehicle~HSR']
+            index = 7
+    [validate_loader.loader]
+    batch_size = 128
+    shuffle = true
+    num_workers = 0
+    pin_memory = false
+    drop_last = false
+
+# --- Temporal Convolutional Network ---
+# [1] S. Bai, J. Z. Kolter, and V. Koltun, "An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling," arXiv: Learning, 2018.
+
+[model]
+device = "cuda:0"
+non_blocking = true
+max_epochs = 500
+    [model.model]
+    activation_reference = 'torch.nn.ReLU'
+    pool_size = 1024
+    num_classes = 8
+    linear_features = []
+        # ACCELEROMETER
+        [[model.model.resnets]]
+        in_channels = 7
+        block = 'bottleneck'
+        layers = [2, 1, 2, 1]
+        channels = [8, 16, 32, 64]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 64
+        layer_channels = [64, 128, 256]
+        kernel_size = 2
+        dropout = 0.0
+        # MAGNETIC_FIELD
+        [[model.model.resnets]]
+        in_channels = 7
+        block = 'bottleneck'
+        layers = [2, 1, 2, 1]
+        channels = [8, 16, 32, 64]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 64
+        layer_channels = [64, 128, 256]
+        kernel_size = 2
+        dropout = 0.0
+        # GYROSCOPE
+        [[model.model.resnets]]
+        in_channels = 7
+        block = 'bottleneck'
+        layers = [2, 1, 2, 1]
+        channels = [8, 16, 32, 64]
+        enable_classifier = false
+        [[model.model.tcns]]
+        in_channels = 64
+        layer_channels = [64, 128, 256]
+        kernel_size = 2
+        dropout = 0.0
+    [model.optimizer]
+    reference = "torch.optim.AdamW"
+        [model.optimizer.kwargs]
+        lr = 1e-3
+        amsgrad = true
+        [model.optimizer.scheduler]
+        reference = 'torch.optim.lr_scheduler.ReduceLROnPlateau'
+            [model.optimizer.scheduler.kwargs]
+            patience = 2
+            factor = 0.80
+            verbose = true
+            cooldown = 5
+            threshold = 1e-7
+            mode = "min"
+    [model.loss]
+    reference = "torch.nn.CrossEntropyLoss"
+        [model.loss.kwargs]

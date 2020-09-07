@@ -1,0 +1,40 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "Huawei-Sussex dataset development example"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "DEBUG"
+
+[[__meta__]]
+reference = "datasets.shl.HuaweiSussexDataLoaderTask:development"
+include = false
+path = ""
+profile = "mhealth"
+execute = true
+
+[shl]
+sampler_type = "none"
+    [shl.dataset]
+    reference = "datasets.shl.HuaweiSussex"
+        [shl.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/hasca20_source"
+        num_workers = 4
+        process = 'quaternion-components'
+        subsets = ['train/Bag']# 'train/Hand', 'train/Hips', 'train/Torso']
+        label_mapping = 'raw'
+        remove_sensor = ['ORIENTATION']
+
+
+    [shl.loader]
+    batch_size = 128
+    shuffle = true
+    num_workers = 0
+    pin_memory = true
+    drop_last = true

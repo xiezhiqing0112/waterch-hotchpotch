@@ -107,6 +107,6 @@ max_epochs = 400
         [model.optimizer.kwargs]
         lr = 1e-4
         amsgrad = true
-        [model.loss]
-        reference = "torch.nn.CrossEntropyLoss"
-            [model.loss.kwargs]
+    [model.loss]
+    reference = "torch.nn.CrossEntropyLoss"
+        [model.loss.kwargs]

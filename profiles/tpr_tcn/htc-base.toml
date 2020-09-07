@@ -1,0 +1,94 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "Temporal Convolutional Network on Huawei-Sussex Dataset"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Global Settings -----
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "INFO"
+
+# ----- Pipeline Metainfo -----
+
+[[__meta__]]
+reference = "waterch.tasker.tasks.utils.SetEnvironmentTask"
+include = false
+path = ""
+profile = "env"
+execute = true
+
+[[__meta__]]
+reference = "datasets.htc_tmd.HTCTMDDataLoaderTask"
+include = false
+path = ""
+profile = "loader"
+execute = true
+
+[[__meta__]]
+reference = "models.tpr_tcn.baseline.BaselineTask"
+include = false
+path = ""
+profile = "model"
+execute = true
+
+# ----- Pipeline Parameters -----
+
+# --- Environment Values ---
+
+[env]
+env = [
+    ["CUDA_VISIBLE_DEVICES", "7"]
+]
+
+# --- Huawei-Sussex Train Dataloader ---
+
+[loader]
+sampler_type = "batch_sampler"
+    [loader.dataset]
+    reference = "datasets.htc_tmd.HTCTMD"
+        [loader.dataset.kwargs]
+        cache_dir = "/public/lhy/crz/repos/waterch-hotchpotch/.cache/htc_tmd/5_sec"
+        num_workers = 8
+        slice = 'none'
+        preprocess = 'raw'
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['still']
+            index = 0
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['walk']
+            index = 1
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['run']
+            index = 2
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['bicycle']
+            index = 3
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~motorcycle']
+            index = 4
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~car']
+            index = 5
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~bus']
+            index = 6
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~MRT', 'vehicle~train', 'vehicle~HSR']
+            index = 7
+    [loader.loader]
+    batch_size = 1
+    shuffle = true
+    num_workers = 4
+    pin_memory = true
+    drop_last = false
+
+# --- LightGBM Method ---
+# [1]	熊苏生, "基于改进LightGBM的交通模式识别算法," 计算机与现代化, no. 10, pp. 68-73+126, 2018.
+
+[model]

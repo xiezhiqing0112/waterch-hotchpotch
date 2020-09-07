@@ -1,0 +1,77 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "HTC TMD Dataset Prepare task"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Global Settings -----
+
+[__setting__]
+    [__setting__.storage]
+    reference = "waterch.tasker.storage.DictStorage"
+    [__setting__.log]
+    stdout = true
+    level = "INFO"
+
+# ----- Pipeline Metainfo -----
+
+[[__meta__]]
+reference = "datasets.htc_tmd.HTCTMDPrepareTask"
+include = false
+path = ""
+profile = "prepare"
+execute = false
+
+[[__meta__]]
+reference = "datasets.htc_tmd.HTCTMDDataLoaderTask"
+include = false
+path = ""
+profile = "loader"
+execute = true
+
+# ----- Pipeline Parameters -----
+
+# --- Preparing HTC data ---
+[prepare]
+root_dir = "/public/lhy/crz/datasets/htc_tmd"
+num_workers = 1
+sample_period = 5
+
+# --- Build dataset ---
+[loader]
+sampler_type = "batch_sampler"
+    [loader.dataset]
+    reference = "datasets.htc_tmd.HTCTMD"
+        [loader.dataset.kwargs]
+        cache_dir = "/public/lhy/crz/repos/waterch-hotchpotch/.cache/htc_tmd/5_sec"
+        num_workers = 8
+        slice = '+0.8'
+        preprocess = 'robust'
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['still']
+            index = 0
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['walk']
+            index = 1
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['run']
+            index = 2
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['bicycle']
+            index = 3
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~motorcycle']
+            index = 4
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~car', 'vehicle~bus']
+            index = 5
+            [[loader.dataset.kwargs.label_mapping]]
+            name = ['vehicle~MRT', 'vehicle~train', 'vehicle~HSR']
+            index = 6
+    [loader.loader]
+    batch_size = 512
+    shuffle = true
+    num_workers = 2
+    pin_memory = true
+    drop_last = true

@@ -21,7 +21,7 @@ class BasicBlock1d(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
+                 base_width=64, dilation=1, norm_layer=None, **kwargs):
         super(BasicBlock1d, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm1d
@@ -29,10 +29,15 @@ class BasicBlock1d(nn.Module):
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
         if dilation > 1:
             raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
+        if 'activation' in kwargs:
+            activation = kwargs['activation']
+        else:
+            activation = nn.ReLU
+
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = activation(inplace=True)
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = norm_layer(planes)
         self.downsample = downsample
@@ -67,10 +72,15 @@ class Bottleneck1d(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
+                 base_width=64, dilation=1, norm_layer=None, **kwargs):
         super(Bottleneck1d, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm1d
+        if 'activation' in kwargs:
+            activation = kwargs['activation']
+        else:
+            activation = nn.ReLU
+
         width = int(planes * (base_width / 64.)) * groups
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv1x1(inplanes, width)
@@ -79,7 +89,7 @@ class Bottleneck1d(nn.Module):
         self.bn2 = norm_layer(width)
         self.conv3 = conv1x1(width, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = activation(inplace=True)
         self.downsample = downsample
         self.stride = stride
 
@@ -119,6 +129,7 @@ class ResNet1d(nn.Module, ProfileMixin):
             value('zero_init_residual', bool),
             value('groups', int),
             value('width_per_group', int),
+            value('enable_classifier', bool)
         ]
 
     def __init__(self, in_channels, block, layers, channels, num_classes=1000, zero_init_residual=False,
@@ -127,6 +138,9 @@ class ResNet1d(nn.Module, ProfileMixin):
         replace_stride_with_dilation = kwargs['replace_stride_with_dilation'] \
             if 'replace_stride_with_dilation' in kwargs else None
         norm_layer = kwargs['norm_layer'] if 'norm_layer' in kwargs else None
+        self.enable_classifier = kwargs['enable_classifier'] if 'enable_classifier' in kwargs else True
+
+        assert len(layers) == len(channels)
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm1d
@@ -136,37 +150,43 @@ class ResNet1d(nn.Module, ProfileMixin):
             block = Bottleneck1d
         else:
             block = BasicBlock1d
+        if 'activation' in kwargs:
+            activation = kwargs['activation']
+        else:
+            activation = nn.ReLU
 
         self.inplanes = 64
         self.dilation = 1
         if replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
             # the 2x2 stride with a dilated convolution instead
-            replace_stride_with_dilation = [False, False, False]
-        if len(replace_stride_with_dilation) != 3:
-            raise ValueError("replace_stride_with_dilation should be None "
-                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
+            replace_stride_with_dilation = [False for idx in range(len(channels) - 1)]
+        assert len(replace_stride_with_dilation) == len(channels) - 1
         if channels is None:
             channels = [64, 128, 256, 512]
-        if len(channels) != 4:
-            raise ValueError("channels should be None "
-                             "or a 4-element tuple, got {}".format(channels))
+
         self.groups = groups
         self.base_width = width_per_group
         self.conv1 = nn.Conv1d(in_channels, self.inplanes, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = norm_layer(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = activation(inplace=True)
         self.maxpool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, channels[0], layers[0])
-        self.layer2 = self._make_layer(block, channels[1], layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, channels[2], layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, channels[3], layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
-        self.avgpool = nn.AdaptiveAvgPool1d(1)
-        self.fc = nn.Linear(channels[3] * block.expansion, num_classes)
+
+        self.layers = nn.Sequential(*tuple(map(
+            lambda idx: self._make_layer(block, channels[idx], layers[idx])
+            if idx == 0
+            else self._make_layer(
+                block, channels[idx], layers[idx],
+                stride=2, dilate=replace_stride_with_dilation[idx - 1]
+            ),
+            range(len(layers))
+        )))
+        if self.enable_classifier:
+            self.avgpool = nn.AdaptiveAvgPool1d(1)
+            self.fc = nn.Linear(channels[-1] * block.expansion, num_classes)
+        else:
+            self.fc = nn.Conv1d(in_channels=channels[-1] * block.expansion, out_channels=channels[-1], kernel_size=1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
@@ -185,7 +205,7 @@ class ResNet1d(nn.Module, ProfileMixin):
                 elif isinstance(m, BasicBlock1d):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, **kwargs):
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -197,6 +217,10 @@ class ResNet1d(nn.Module, ProfileMixin):
                 conv1x1(self.inplanes, planes * block.expansion, stride),
                 norm_layer(planes * block.expansion),
             )
+        if 'activation' in kwargs:
+            activation = kwargs['activation']
+        else:
+            activation = nn.ReLU
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
@@ -205,7 +229,7 @@ class ResNet1d(nn.Module, ProfileMixin):
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
-                                norm_layer=norm_layer))
+                                norm_layer=norm_layer, activation=activation))
 
         return nn.Sequential(*layers)
 
@@ -216,13 +240,11 @@ class ResNet1d(nn.Module, ProfileMixin):
         x = self.relu(x)
         x = self.maxpool(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        x = self.layers(x)
 
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        if self.enable_classifier:
+            x = self.avgpool(x)
+            x = torch.flatten(x, 1)
         x = self.fc(x)
 
         return x

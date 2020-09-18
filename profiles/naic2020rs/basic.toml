@@ -1,0 +1,34 @@
+# ----- Header -----
+__schema__ = "tasker.launcher.Launcher"
+__name__ = "Basic Template of training script of NAIC 2020 Remore Sense"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Launcher Settings -----
+[__setting__]
+    [__setting__.log]
+        [__setting__.log.console]
+        class = 'logging.StreamHandler'
+        formatter = 'default'
+        level = 'INFO'
+        stream = 'ext://sys.stdout'
+        [__setting__.log.file]
+        class = 'logging.FileHandler'
+        formatter = 'default'
+        level = 'DEBUG'
+        filename = '.tasker/log/naic2020rs-basic-model-training.log'
+    [__setting__.storage]
+    reference = ""
+    kwargs = []
+
+[[__meta__]]
+reference = ""
+include = true
+path = ""
+profile = ""
+execute = true
+
+
+

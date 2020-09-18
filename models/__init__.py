@@ -4,7 +4,8 @@ __all__ = [
     'tpr_tcn',
     'densenet',
     'attention',
-    'embracenet'
+    'embracenet',
+    'naic2020rs'
 ]
 
 from models import *

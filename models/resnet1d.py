@@ -2,8 +2,8 @@ from typing import List
 
 import torch
 from torch import nn
-from waterch.tasker import Definition, value
-from waterch.tasker.mixin import ProfileMixin
+from tasker import Definition, value
+from tasker.mixin import ProfileMixin
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):

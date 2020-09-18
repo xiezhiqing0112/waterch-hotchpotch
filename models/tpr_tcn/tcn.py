@@ -6,11 +6,11 @@ from typing import OrderedDict, List, Text
 import torch
 from ignite import metrics, engine
 from torch import nn
-from waterch.tasker import Profile, value, Definition, Return
-from waterch.tasker.storage import Storage
-from waterch.tasker.tasks import Task
-from waterch.tasker.tasks.torch import SimpleTrainTask
-from waterch.tasker.utils import import_reference
+from tasker import Profile, value, Definition, Return
+from tasker.storage import Storage
+from tasker.tasks import Task
+from tasker.tasks.torch import SimpleTrainTask
+from tasker.utils import import_reference
 
 from models.resnet1d import ResNet1d
 from models.tcn import TemporalConvNet

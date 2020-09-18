@@ -11,11 +11,11 @@ import pandas as pd
 import torch
 from torch.utils import data
 from torch.utils.data import Dataset, BatchSampler, RandomSampler
-from waterch.tasker import Definition, Profile, Return
-from waterch.tasker.mixin import value, ProfileMixin
-from waterch.tasker.storage import Storage
-from waterch.tasker.tasks import Task
-from waterch.tasker.tasks.torch import SimpleDataLoaderTask
+from tasker import Definition, Profile, Return
+from tasker.mixin import value, ProfileMixin
+from tasker.storage import Storage
+from tasker.tasks import Task
+from tasker.tasks.torch import SimpleDataLoaderTask
 
 
 class HTCTMDPrepareTask(Task):

@@ -14,10 +14,10 @@ from gc import collect
 from sklearn.decomposition import PCA
 from torch.utils import data
 from torch.utils.data import Dataset, BatchSampler, RandomSampler
-from waterch.tasker import Definition, value, Profile
-from waterch.tasker.mixin import ProfileMixin
-from waterch.tasker.storage import Storage
-from waterch.tasker.tasks.torch import SimpleDataLoaderTask
+from tasker import Definition, value, Profile
+from tasker.mixin import ProfileMixin
+from tasker.storage import Storage
+from tasker.tasks.torch import SimpleDataLoaderTask
 
 
 def QV_cross_1d(v0, v1, v2, Q0, Q1, Q2, Q3):

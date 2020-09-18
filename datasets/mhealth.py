@@ -6,9 +6,9 @@ from typing import List, Text
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from waterch.tasker import Definition
-from waterch.tasker.mixin import ProfileMixin, value
-from waterch.tasker.tasks.torch import SimpleDataLoaderTask
+from tasker import Definition
+from tasker.mixin import ProfileMixin, value
+from tasker.tasks.torch import SimpleDataLoaderTask
 from sklearn import preprocessing
 
 

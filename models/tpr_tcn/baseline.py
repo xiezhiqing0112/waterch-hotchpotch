@@ -10,9 +10,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import robust_scale
 from sklearn.svm import SVC
 from torch import nn
-from waterch.tasker import Definition, Profile, Return
-from waterch.tasker.storage import Storage
-from waterch.tasker.tasks import Task
+from tasker import Definition, Profile, Return
+from tasker.storage import Storage
+from tasker.tasks import Task
 from xgboost.sklearn import XGBClassifier
 
 from datasets.htc_tmd import HTCTMD

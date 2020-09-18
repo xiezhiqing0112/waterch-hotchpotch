@@ -11,8 +11,16 @@ __abstract__ = ""
     [__setting__.storage]
     reference = "waterch.tasker.storage.DictStorage"
     [__setting__.log]
-    stdout = true
-    level = "INFO"
+        [__setting__.log.console]
+        class = 'logging.StreamHandler'
+        formatter = 'default'
+        level = 'INFO'
+        stream = 'ext://sys.stdout'
+        [__setting__.log.file]
+        class = 'logging.FileHandler'
+        formatter = 'default'
+        level = 'DEBUG'
+        filename = '.tasker/log/mhelth-kd-resnet.log'
 
 # ----- Task metainfo -----
 
@@ -48,7 +56,7 @@ execute = true
 
 [env]
 env = [
-    ["CUDA_VISIBLE_DEVICES", "0,1"]
+    ["CUDA_VISIBLE_DEVICES", "7"]
 ]
 
 [train_loader]
@@ -58,10 +66,10 @@ sampler_type = "none"
         [train_loader.dataset.kwargs]
         root_dir = "/public/lhy/crz/datasets/mhealth"
         num_workers = 0
-        window_size = 150
+        window_size = 250
         window_stride = 50
         filter_type = 'if_not'
-        filter_by = ['subject10']
+        filter_by = ['subject9', 'subject10']
         preprocess = ['robust']
     [train_loader.loader]
     batch_size = 256
@@ -76,11 +84,11 @@ sampler_type = "none"
     reference = "datasets.mhealth.MHealth"
         [validate_loader.dataset.kwargs]
         root_dir = "/public/lhy/crz/datasets/mhealth"
-        num_workers = 4
-        window_size = 150
+        num_workers = 0
+        window_size = 250
         window_stride = 50
         filter_type = 'if'
-        filter_by = ['subject10']
+        filter_by = ['subject9', 'subject10']
         preprocess = ['robust']
     [validate_loader.loader]
     batch_size = 256
@@ -96,8 +104,8 @@ max_epochs = 400
     [model.model]
     in_channels = 23
     block = "bottleneck" # "bottleneck" or "basic_block"
-    layers = [1, 1, 1, 1]
-    channels = [32, 48, 64, 80]
+    layers = [1]
+    channels = [32]
     num_classes = 12 # 12 class from mhealth dataset
     zero_init_residual = false
     groups = 2

@@ -1,0 +1,44 @@
+__schema__ = "waterch.tasker.launcher.Launcher"
+__name__ = "RealWorld (HAR) dataset development example"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+[__setting__]
+    [__setting__.storage]
+    reference = "tasker.storage.DictStorage"
+    [__setting__.log]
+        [__setting__.log.console]
+        class = 'logging.StreamHandler'
+        formatter = 'default'
+        level = 'INFO'
+        stream = 'ext://sys.stdout'
+        [__setting__.log.file]
+        class = 'logging.FileHandler'
+        formatter = 'default'
+        level = 'DEBUG'
+        filename = '.tasker/log/mhelth-kd-resnet.log'
+
+[[__meta__]]
+reference = "tasker.tasks.torch.SimpleDataLoaderTask:development"
+include = false
+path = ""
+profile = "realworld"
+execute = true
+
+[realworld]
+sampler_type = "none"
+    [realworld.dataset]
+    reference = "datasets.realworld_har.RealWorldHAR"
+        [realworld.dataset.kwargs]
+        root_dir = "/public/lhy/crz/datasets/realworld_har/"
+        frame_period = 1
+        filter_type = "if" # or "if_not"
+        filter_by = ['proband15', 'proband14']
+    [realworld.loader]
+    batch_size = 128
+    shuffle = true
+    num_workers = 0
+    pin_memory = true
+    drop_last = true

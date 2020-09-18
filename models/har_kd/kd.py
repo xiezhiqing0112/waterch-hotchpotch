@@ -5,9 +5,9 @@ from typing import List, Text
 from ignite import metrics
 from ignite.engine import Engine
 from torch import nn
-from waterch.tasker import Profile, value
-from waterch.tasker.storage import Storage
-from waterch.tasker.tasks.torch import SimpleTrainTask
+from tasker import Profile, value
+from tasker.storage import Storage
+from tasker.tasks.torch import SimpleTrainTask
 
 from loss_functions.kd import HintonCrossEntropyLoss
 from models.resnet1d import ResNet1d

@@ -20,15 +20,86 @@ __abstract__ = ""
         level = 'DEBUG'
         filename = '.tasker/log/naic2020rs-basic-model-training.log'
     [__setting__.storage]
-    reference = ""
+    reference = "tasker.storages.vanilla.HardPickleStorage"
     kwargs = []
 
+# ----- Tasks to Launch -----
+
 [[__meta__]]
-reference = ""
-include = true
+reference = "tasker.tasks.utils.SetEnvironmentTask"
+include = false
 path = ""
-profile = ""
+profile = "env"
 execute = true
 
+[[__meta__]]
+reference = "datasets.naic2020rs.NAIC2020RSDataLoaderTask:train"
+include = false
+path = ""
+profile = "train_loader"
+execute = true
 
+[[__meta__]]
+reference = "datasets.naic2020rs.NAIC2020RSDataLoaderTask:validate"
+include = false
+path = ""
+profile = "validate_loader"
+execute = true
 
+[[__meta__]]
+reference = "models.naic2020rs.NAIC2020RSModelTrainTask"
+include = false
+path = ""
+profile = "model"
+execute = true
+
+# -----
+
+[env]
+env = [
+    ["CUDA_VISIBLE_DEVICES", "7"]
+]
+
+[train_loader]
+sampler_type = "batch_sampler"
+    [train_loader.dataset]
+    reference = 'datasets.naic2020rs.NAIC2020RS'
+        [train_loader.dataset.kwargs]
+        root_dir = '/public/lhy/crz/datasets/naic2020_rs'
+        train = true
+        ratio = 0.9
+    [train_loader.loader]
+    batch_size = 64
+    shuffle = true
+    num_workers = 4
+    pin_memory = false
+    drop_last = false
+
+[validate_loader]
+sampler_type = "batch_sampler"
+    [validate_loader.dataset]
+    reference = 'datasets.naic2020rs.NAIC2020RS'
+        [validate_loader.dataset.kwargs]
+        root_dir = '/public/lhy/crz/datasets/naic2020_rs'
+        train = false
+        ratio = 0.9
+    [validate_loader.loader]
+    batch_size = 64
+    shuffle = true
+    num_workers = 4
+    pin_memory = false
+    drop_last = false
+
+[model]
+device = "cuda:0"
+non_blocking = false
+max_epochs = 400
+    [model.model]
+    [model.optimizer]
+    reference = "torch.optim.AdamW"
+        [model.optimizer.kwargs]
+        lr = 1e-4
+        amsgrad = true
+    [model.loss]
+    reference = "torch.nn.CrossEntropyLoss"
+        [model.loss.kwargs]

@@ -168,7 +168,7 @@ class NAIC2020RS(Dataset, ProfileMixin):
     ))
 
     def __getitem__(self, item):
-        logger = get_logger('datasets.naic2020rs.NAIC2020RS.__getitem__')
+        # logger = get_logger('datasets.naic2020rs.NAIC2020RS.__getitem__')
         # logger.info(item)
 
         process_index = int(item // self.index.shape[0])
@@ -187,7 +187,7 @@ class NAIC2020RS(Dataset, ProfileMixin):
         label: np.ndarray = cv2.imread(
             str(label_path),
             flags=cv2.IMREAD_UNCHANGED
-        )  # Shape (256, 256, 3)
+        )  # Shape (256, 256)
 
         feature = feature.transpose((2, 0, 1))  # Shape (3, 256, 256)
         label = label // 100 - 1  # Shape (256, 256)

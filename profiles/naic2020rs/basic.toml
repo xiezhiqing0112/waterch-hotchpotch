@@ -18,7 +18,7 @@ __abstract__ = ""
         class = 'logging.FileHandler'
         formatter = 'default'
         level = 'DEBUG'
-        filename = '.tasker/log/naic2020rs-basic-model-training.log'
+        filename = '.tasker/log/naic2020rs-basic-model-training.log' # File path here should be modified to train other models.
     [__setting__.storage]
     reference = "tasker.storages.vanilla.HardPickleStorage"
     kwargs = []
@@ -57,7 +57,7 @@ execute = true
 
 [env]
 env = [
-    ["CUDA_VISIBLE_DEVICES", "7"]
+    ["CUDA_VISIBLE_DEVICES", "3,6,7"]
 ]
 
 [train_loader]
@@ -69,10 +69,10 @@ sampler_type = "batch_sampler"
         train = true
         ratio = 0.9
     [train_loader.loader]
-    batch_size = 64
+    batch_size = 256
     shuffle = true
-    num_workers = 4
-    pin_memory = false
+    num_workers = 32
+    pin_memory = true
     drop_last = false
 
 [validate_loader]
@@ -84,17 +84,18 @@ sampler_type = "batch_sampler"
         train = false
         ratio = 0.9
     [validate_loader.loader]
-    batch_size = 64
+    batch_size = 256
     shuffle = true
-    num_workers = 4
-    pin_memory = false
+    num_workers = 32
+    pin_memory = true
     drop_last = false
 
 [model]
 device = "cuda:0"
 non_blocking = false
-max_epochs = 400
+max_epochs = 20
     [model.model]
+    # Insert configurations of your model here.
     [model.optimizer]
     reference = "torch.optim.AdamW"
         [model.optimizer.kwargs]

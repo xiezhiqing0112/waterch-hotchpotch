@@ -47,7 +47,7 @@ profile = "validate_loader"
 execute = true
 
 [[__meta__]]
-reference = "models.naic2020rs.NAIC2020RSModelTrainTask"
+reference = "models.naic2020rs.basic.NAIC2020RSModelTrainTask"
 include = false
 path = ""
 profile = "model"

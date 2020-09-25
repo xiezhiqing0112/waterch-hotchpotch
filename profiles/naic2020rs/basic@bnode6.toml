@@ -18,7 +18,7 @@ __abstract__ = ""
         class = 'logging.FileHandler'
         formatter = 'default'
         level = 'DEBUG'
-        filename = '.tasker/log/naic2020rs-basic-model-training.log' # File path here should be modified to train other models.
+        filename = '.tasker/log/naic2020rs-basic-model-training@bnode6.log' # File path here should be modified to train other models.
     [__setting__.storage]
     reference = "tasker.storages.vanilla.HardPickleStorage"
     kwargs = []
@@ -51,6 +51,13 @@ reference = "models.naic2020rs.basic.NAIC2020RSModelTrainTask"
 include = false
 path = ""
 profile = "model"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSPretrainedModelTrainTask"
+include = false
+path = ""
+profile = "model"
 execute = true
 
 [[__meta__]]
@@ -64,7 +71,7 @@ execute = true
 
 [env]
 env = [
-    ["CUDA_VISIBLE_DEVICES", "4,5,6,7"]
+    ["CUDA_VISIBLE_DEVICES", "0,1"]
 ]
 
 [train_loader]
@@ -76,9 +83,9 @@ sampler_type = "batch_sampler"
         train = true
         ratio = 0.9
     [train_loader.loader]
-    batch_size = 384
+    batch_size = 64
     shuffle = true
-    num_workers = 2
+    num_workers = 8
     pin_memory = true
     drop_last = false
 
@@ -91,18 +98,19 @@ sampler_type = "batch_sampler"
         train = false
         ratio = 0.9
     [validate_loader.loader]
-    batch_size = 384
+    batch_size = 64
     shuffle = true
-    num_workers = 2
+    num_workers = 4
     pin_memory = true
     drop_last = false
 
 [model]
 device = "cuda:0"
 non_blocking = false
-max_epochs = 10
+max_epochs = 1
     [model.model]
     # Insert configurations of your model here.
+    model_path = '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200924042744-a4e75f39c34747d8819f7121e79d0ce7/model'
     [model.optimizer]
     reference = "torch.optim.AdamW"
         [model.optimizer.kwargs]

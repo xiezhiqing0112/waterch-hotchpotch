@@ -34,7 +34,22 @@ class RealWorldHAR(Dataset, ProfileMixin):
         self.filter_type = kwargs['filter_type']
         self.filter_by = kwargs['filter_by']
 
-        raw_data = OrderedDict(map(lambda proband: (proband, self._load_proband(proband)), listdir(self.root_dir)))
+        raw_data = OrderedDict(map(
+            lambda proband: (proband, self._load_proband(proband)),
+            filter(
+                lambda it: it in self.filter_by if self.filter_type == 'if' else lambda it: it not in self.filter_by,
+                listdir(self.root_dir)
+            )
+        ))
+
+        self.raw_features = np.concatenate(tuple(map(
+            lambda it: it[1][0],
+            sorted(raw_data.items(), key=lambda it: it[0])
+        )), axis=0)
+        self.raw_labels = np.concatenate(tuple(map(
+            lambda it: it[1][1],
+            sorted(raw_data.items(), key=lambda it: it[0])
+        )), axis=0)
         pass
 
     def _load_proband(self, proband_name):
@@ -86,7 +101,8 @@ class RealWorldHAR(Dataset, ProfileMixin):
                     )))
                     return OrderedDict(map(
                         lambda position: (position, OrderedDict(map(
-                            lambda idx: (idx, raw_dict[position][idx].to_numpy().astype(np.float32).transpose()[np.newaxis, :, :]),
+                            lambda idx: (
+                            idx, raw_dict[position][idx].to_numpy().astype(np.float32).transpose()[np.newaxis, :, :]),
                             common_indexes
                         ))),
                         sorted(raw_dict)
@@ -142,14 +158,19 @@ class RealWorldHAR(Dataset, ProfileMixin):
                     )), axis=0),
                     it_z.values()
                 )), axis=1),
-                map(lambda key: per_sensor_label[key], filter(lambda it: it[0] == sensor, per_sensor_label))
+                filter(
+                    lambda it: len(it) != 0,
+                    map(lambda key: per_sensor_label[key], filter(lambda it: it[0] == sensor, per_sensor_label))
+                )
             )), axis=0),
             sensors
         )), axis=1)
 
-        labels = np.concatenate(tuple(map(
-            lambda sensor: sensor,
-            sensors
+        extracted_labels = np.concatenate(tuple(map(
+            lambda it: np.array([labels.index(it[0][1])] * len(
+                tuple(filter(lambda key: key in combined_indexes, it[1][positions[0]]))
+            ), dtype=np.int64),
+            filter(lambda it: it[0][0] == sensors[0] and len(it[1]) != 0, per_sensor_label.items())
         )))
 
-        return features
+        return features, extracted_labels

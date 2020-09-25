@@ -195,7 +195,7 @@ class NAIC2020RS(Dataset, ProfileMixin):
         return image_minmax(feature_process(feature)), label_type(label_process(label))
 
     def __len__(self):
-        return self.index.shape[0] * len(self.process_methods)
+        return self.index.shape[0] * len(self.process_methods) if self.train else self.index.shape[0]
 
 
 class NAIC2020RSDataLoaderTask(SimpleDataLoaderTask):

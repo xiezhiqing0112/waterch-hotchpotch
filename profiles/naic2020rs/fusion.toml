@@ -1,0 +1,106 @@
+# ----- Header -----
+__schema__ = "tasker.launcher.Launcher"
+__name__ = "Basic Template of training script of NAIC 2020 Remore Sense"
+__author__ = "Chen Runze"
+__version__ = "0.0.1"
+__email__ = "chenrz925@bupt.edu.cn"
+__abstract__ = ""
+
+# ----- Launcher Settings -----
+[__setting__]
+    [__setting__.log]
+        [__setting__.log.console]
+        class = 'logging.StreamHandler'
+        formatter = 'default'
+        level = 'INFO'
+        stream = 'ext://sys.stdout'
+        [__setting__.log.file]
+        class = 'logging.FileHandler'
+        formatter = 'default'
+        level = 'DEBUG'
+        filename = '.tasker/log/naic2020rs-result-fusion.log' # File path here should be modified to train other models.
+    [__setting__.storage]
+    reference = "tasker.storages.vanilla.HardPickleStorage"
+    kwargs = []
+
+# ----- Tasks to Launch -----
+
+[[__meta__]]
+reference = "tasker.tasks.utils.SetEnvironmentTask"
+include = false
+path = ""
+profile = "env"
+execute = true
+
+[[__meta__]]
+reference = "datasets.naic2020rs.NAIC2020RSDataLoaderTask:train"
+include = false
+path = ""
+profile = "train_loader"
+execute = false
+
+[[__meta__]]
+reference = "datasets.naic2020rs.NAIC2020RSDataLoaderTask:validate"
+include = false
+path = ""
+profile = "validate_loader"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSModelTrainTask"
+include = false
+path = ""
+profile = "model"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSPretrainedModelTrainTask"
+include = false
+path = ""
+profile = "model"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.ForceLoadModelTask"
+include = false
+path = ""
+profile = "model_load"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSResultDumpTask"
+include = false
+path = ""
+profile = "result"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSResultFusionTask"
+include = false
+path = ""
+profile = "fusion"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSModelFusionTask"
+include = false
+path = ""
+profile = "fusion"
+execute = true
+
+# -----
+
+[env]
+env = [
+    ["CUDA_VISIBLE_DEVICES", "3"]
+]
+
+[fusion]
+model_paths = [
+    '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200930010229-53344c10aeec447faadddaed97978156/model',
+    '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200929150144-10a908d9e6e849fab8ee73f0b01c43c8/model',
+    '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200929013322-6a4d36004d3748cca74deb41aaf7e198/model',
+    '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200929002459-3509f6c3cad844d090d817ad55adbc0d/model',
+    '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200928151745-656bc6d673cb4d909c51af08c7630af9/model',
+]
+sample_dir = '/public/lhy/crz/datasets/naic2020_rs/image_A'

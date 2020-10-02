@@ -37,14 +37,14 @@ reference = "datasets.naic2020rs.NAIC2020RSDataLoaderTask:train"
 include = false
 path = ""
 profile = "train_loader"
-execute = true
+execute = false
 
 [[__meta__]]
 reference = "datasets.naic2020rs.NAIC2020RSDataLoaderTask:validate"
 include = false
 path = ""
 profile = "validate_loader"
-execute = true
+execute = false
 
 [[__meta__]]
 reference = "models.naic2020rs.basic.NAIC2020RSModelTrainTask"
@@ -58,6 +58,13 @@ reference = "models.naic2020rs.basic.NAIC2020RSPretrainedModelTrainTask"
 include = false
 path = ""
 profile = "model"
+execute = false
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.ForceLoadModelTask"
+include = false
+path = ""
+profile = "model_load"
 execute = true
 
 [[__meta__]]
@@ -98,7 +105,7 @@ sampler_type = "batch_sampler"
         train = false
         ratio = 0.9
     [validate_loader.loader]
-    batch_size = 32
+    batch_size = 64
     shuffle = true
     num_workers = 4
     pin_memory = true
@@ -110,7 +117,7 @@ non_blocking = false
 max_epochs = 1
     [model.model]
     # Insert configurations of your model here.
-    model_path = '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200930185401-b735190fa0e64f3e8893ff115fa51c0b/model'
+    model_path = '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200924042744-a4e75f39c34747d8819f7121e79d0ce7/model'
     [model.optimizer]
     reference = "torch.optim.AdamW"
         [model.optimizer.kwargs]
@@ -119,6 +126,9 @@ max_epochs = 1
     [model.loss]
     reference = "torch.nn.CrossEntropyLoss"
         [model.loss.kwargs]
+
+[model_load]
+model_path = '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200924042744-a4e75f39c34747d8819f7121e79d0ce7/model'
 
 [result]
 sample_dir = '/public/lhy/crz/datasets/naic2020_rs/image_A'

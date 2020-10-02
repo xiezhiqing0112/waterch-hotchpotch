@@ -34,8 +34,10 @@ sampler_type = "none"
         [realworld.dataset.kwargs]
         root_dir = "/public/lhy/crz/datasets/realworld_har/"
         frame_period = 1
-        filter_type = "if" # or "if_not"
-        filter_by = ['proband15', 'proband14']
+        filter_type = "if_not" # or "if_not"
+        filter_by = ["proband15", "proband14"]
+        num_workers = 4
+        process_method = 'robust'
     [realworld.loader]
     batch_size = 128
     shuffle = true

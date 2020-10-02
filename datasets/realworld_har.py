@@ -1,9 +1,12 @@
 from collections import OrderedDict
 from functools import reduce
-from itertools import product, chain
+from itertools import product
+from multiprocessing import Pool
+from pathlib import Path
 from typing import List
 from os import listdir, path
 from zipfile import ZipFile
+from logging import getLogger as get_logger
 
 import pandas as pd
 import numpy as np
@@ -13,13 +16,16 @@ from torch.utils.data import Dataset
 
 
 class RealWorldHAR(Dataset, ProfileMixin):
+    logger = get_logger('datasets.realworld_har.RealWorldHAR')
+
     @classmethod
     def define(cls) -> List[Definition]:
         return [
             value('root_dir', str),
             value('frame_period', int),
             value('filter_type', list, [str]),
-            value('filter_by', str)
+            value('filter_by', str),
+            value('num_workers', int)
         ]
 
     def __init__(self, **kwargs):
@@ -27,18 +33,33 @@ class RealWorldHAR(Dataset, ProfileMixin):
         assert 'frame_period' in kwargs
         assert 'filter_type' in kwargs
         assert 'filter_by' in kwargs
+        assert 'num_workers' in kwargs
 
         self.sample_bound = 45
         self.root_dir = kwargs['root_dir']
         self.frame_period = kwargs['frame_period']
         self.filter_type = kwargs['filter_type']
         self.filter_by = kwargs['filter_by']
+        self.num_workers = kwargs['num_workers']
+        self.process_method = getattr(self, f'process_{kwargs["process_method"]}', self.process_raw)
 
-        raw_data = OrderedDict(map(
-            lambda proband: (proband, self._load_proband(proband)),
+        self.channel_min = np.load(str(Path(self.root_dir) / 'channel_min.npy'))
+        self.channel_max = np.load(str(Path(self.root_dir) / 'channel_max.npy'))
+        self.channel_mean = np.load(str(Path(self.root_dir) / 'channel_mean.npy'))
+        self.channel_std = np.load(str(Path(self.root_dir) / 'channel_std.npy'))
+        self.channel_25 = np.load(str(Path(self.root_dir) / 'channel_25.npy'))
+        self.channel_75 = np.load(str(Path(self.root_dir) / 'channel_75.npy'))
+
+        pool_map = Pool(self.num_workers).map if self.num_workers > 0 else map
+
+        raw_data = OrderedDict(pool_map(
+            self._lambda_load_proband,
             filter(
-                lambda it: it in self.filter_by if self.filter_type == 'if' else lambda it: it not in self.filter_by,
-                listdir(self.root_dir)
+                (lambda it: it in self.filter_by) if self.filter_type == 'if' else (lambda it: it not in self.filter_by),
+                filter(
+                    lambda it: not it.endswith('.npy'),
+                    listdir(self.root_dir)
+                )
             )
         ))
 
@@ -50,7 +71,9 @@ class RealWorldHAR(Dataset, ProfileMixin):
             lambda it: it[1][1],
             sorted(raw_data.items(), key=lambda it: it[0])
         )), axis=0)
-        pass
+
+    def _lambda_load_proband(self, proband_name):
+        return proband_name, self._load_proband(proband_name)
 
     def _load_proband(self, proband_name):
         labels = (
@@ -102,7 +125,8 @@ class RealWorldHAR(Dataset, ProfileMixin):
                     return OrderedDict(map(
                         lambda position: (position, OrderedDict(map(
                             lambda idx: (
-                            idx, raw_dict[position][idx].to_numpy().astype(np.float32).transpose()[np.newaxis, :, :]),
+                                idx,
+                                raw_dict[position][idx].to_numpy().astype(np.float32).transpose()[np.newaxis, :, :]),
                             common_indexes
                         ))),
                         sorted(raw_dict)
@@ -173,4 +197,27 @@ class RealWorldHAR(Dataset, ProfileMixin):
             filter(lambda it: it[0][0] == sensors[0] and len(it[1]) != 0, per_sensor_label.items())
         )))
 
+        self.logger.info(f'Proband {proband_name} loaded')
+
         return features, extracted_labels
+
+    def process_minmax(self, array: np.ndarray) -> np.ndarray:
+        return (np.clip(array, self.channel_min[:, np.newaxis], self.channel_max[:, np.newaxis]) - self.channel_min[:, np.newaxis]) / (self.channel_max - self.channel_min)[:, np.newaxis]
+
+    def process_robust(self, array: np.ndarray) -> np.ndarray:
+        lower_bound = self.channel_25 - 1.5 * (self.channel_75 - self.channel_25)
+        upper_bound = self.channel_25 + 1.5 * (self.channel_75 - self.channel_25)
+
+        return (np.clip(array, lower_bound[:, np.newaxis], upper_bound[:, np.newaxis]) - lower_bound[:, np.newaxis]) / (upper_bound[:, np.newaxis] - lower_bound[:, np.newaxis])
+
+    def process_raw(self, array: np.ndarray) -> np.ndarray:
+        return array
+
+    def process_zscore(self, array: np.ndarray) -> np.ndarray:
+        return (array - self.channel_mean[:, np.newaxis]) / self.channel_std[:, np.newaxis]
+
+    def __getitem__(self, item):
+        return self.process_method(self.raw_features[item]), self.raw_labels[item]
+
+    def __len__(self):
+        return self.raw_labels.shape[0]

@@ -164,7 +164,21 @@ class NAIC2020RS(Dataset, ProfileMixin):
                 lambda feature: feature.transpose((0, 2, 1)),
                 lambda label: label.transpose((1, 0)),
             )
-        )
+        ),
+        (
+            13, (  # Noise plus
+                lambda feature: normal_random_noise(feature.transpose((1, 2, 0)), lambda s, n: s + n).transpose(
+                    (2, 0, 1)),
+                lambda label: label,
+            )
+        ),
+        (
+            14, (  # Noise minus
+                lambda feature: normal_random_noise(feature.transpose((1, 2, 0)), lambda s, n: s - n).transpose(
+                    (2, 0, 1)),
+                lambda label: label,
+            )
+        ),
     ))
 
     def __getitem__(self, item):

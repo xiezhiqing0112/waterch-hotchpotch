@@ -18,7 +18,7 @@ __abstract__ = ""
         class = 'logging.FileHandler'
         formatter = 'default'
         level = 'DEBUG'
-        filename = '.tasker/log/naic2020rs-basic-model-training@bnode6.log' # File path here should be modified to train other models.
+        filename = '.tasker/log/naic2020rs-basic-model-101-training.log' # File path here should be modified to train other models.
     [__setting__.storage]
     reference = "tasker.storages.vanilla.HardPickleStorage"
     kwargs = []
@@ -47,18 +47,18 @@ profile = "validate_loader"
 execute = true
 
 [[__meta__]]
-reference = "models.naic2020rs.basic.NAIC2020RSModelTrainTask"
-include = false
-path = ""
-profile = "model"
-execute = false
-
-[[__meta__]]
 reference = "models.naic2020rs.basic.NAIC2020RSPretrainedModelTrainTask"
 include = false
 path = ""
 profile = "model"
 execute = true
+
+[[__meta__]]
+reference = "models.naic2020rs.basic.NAIC2020RSModel101TrainTask"
+include = false
+path = ""
+profile = "model"
+execute = false
 
 [[__meta__]]
 reference = "models.naic2020rs.basic.NAIC2020RSResultDumpTask"
@@ -71,7 +71,7 @@ execute = true
 
 [env]
 env = [
-    ["CUDA_VISIBLE_DEVICES", "0,1"]
+    ["CUDA_VISIBLE_DEVICES", "0,1,2"]
 ]
 
 [train_loader]
@@ -83,10 +83,10 @@ sampler_type = "batch_sampler"
         train = true
         ratio = 0.9
     [train_loader.loader]
-    batch_size = 64
+    batch_size = 180
     shuffle = true
-    num_workers = 8
-    pin_memory = true
+    num_workers = 2
+    pin_memory = false
     drop_last = false
 
 [validate_loader]
@@ -98,10 +98,10 @@ sampler_type = "batch_sampler"
         train = false
         ratio = 0.9
     [validate_loader.loader]
-    batch_size = 32
+    batch_size = 180
     shuffle = true
-    num_workers = 4
-    pin_memory = true
+    num_workers = 2
+    pin_memory = false
     drop_last = false
 
 [model]
@@ -110,7 +110,7 @@ non_blocking = false
 max_epochs = 1
     [model.model]
     # Insert configurations of your model here.
-    model_path = '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200930185401-b735190fa0e64f3e8893ff115fa51c0b/model'
+    model_path = '/public/lhy/crz/repos/waterch-hotchpotch/.tasker/storage/pickle/20200930010229-53344c10aeec447faadddaed97978156/model'
     [model.optimizer]
     reference = "torch.optim.AdamW"
         [model.optimizer.kwargs]
